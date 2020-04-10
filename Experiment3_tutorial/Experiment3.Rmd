@@ -1,21 +1,21 @@
 In this folder, we have put together a walk through using RMarkdown for the data analysis of Experiment 3.
 
-#Analysis of Recombination rate variation
-###written by Ulku Huma Altindag
+# Analysis of Recombination rate variation
+### written by Ulku Huma Altindag
 
-##Set directory you are working in with the datasets
-```{r}
+## Set directory you are working in with the datasets
+```{r}https://github.com/StevisonLab/Peak-Plasticity-Project/blob/master/Experiment3_Tutorial/README.md
 #setwd(~/PC/Desktop/plasticity experiments/Experiment 4)
 ```
 
-##load the datasets
+## load the datasets
 ```{r}
 yv=read.csv("Exp3_rawdata.csv", header= TRUE, stringsAsFactors = TRUE, na.strings="-")
 backcross=read.csv("Exp3bc_setup.csv", header=T,na.strings="-")
 ```
 
  
-##to make sure R reads it as a character rather than a number.
+## to make sure R reads it as a character rather than a number.
 
 ```{r}
 backcross$Treatment=as.character(backcross$Treatment)
@@ -29,7 +29,7 @@ yv$yellow.only.1=as.numeric(as.character(yv$yellow.only.1))
 yv$vermillion.only.1=as.numeric(as.character(yv$vermillion.only.1))
 ```
 
-##necessary packages
+## necessary packages
 ```{r}
 library(ggplot2)
 library(ggthemes)
@@ -44,7 +44,7 @@ library(doBy)
 library(pbkrtest)
 #library(tidyr)
 ```
-##CO groups were defined
+## CO groups were defined
 
 ```{r}
 yv$SCO1=yv$yellow.only+yv$yellow.only.1
@@ -52,7 +52,7 @@ yv$SCO2=yv$vermillion.only+yv$vermillion.only.1
 yv$NCO1=yv$wildtype+yv$wildtype.1
 yv$NCO2=yv$yellow.vermillion+yv$vermillion.only.1
 ```
-##Using the sanity check, we can see whether R interprets the results accurately.
+## Using the sanity check, we can see whether R interprets the results accurately.
 
 ```{r}
 sco_count=sum(yv$SCO1, na.rm = TRUE)+sum(yv$SCO2, na.rm = TRUE)
@@ -60,27 +60,25 @@ nco_count=sum(yv$NCO1+yv$NCO2, na.rm = TRUE)
 num_samples=sum(nco_count+sco_count, na.rm = TRUE)
 ```
 
-Rate between yellow and vermillion is ` {r} (sum(yv$SCO1, na.rm = TRUE)+sum(yv$SCO2, na.rm = TRUE))/num_samples`
-
-##merge with treatment data (This is important for summarization of the data)
+## merge with treatment data (This is important for summarization of the data)
 
 ```{r}
 yv_merged <- merge(yv, backcross, by.x = "Vial..", by.y = "Vial.number", all=T)
 yv_merged = na.omit(yv_merged)
 dataset=summaryBy(SCO1+SCO2+NCO1+NCO2~F1.Vial+Day..letter.of.vial.+Treatment,data=yv_merged, FUN=sum,na.rm=T)
 ```
-##calculating the fecundity
-##add in a column for total offspring
+## calculating the fecundity
+## add in a column for total offspring
 
 ```{r}
 dataset$total_offspring=dataset$SCO1.sum + dataset$SCO2.sum + dataset$NCO1.sum + dataset$NCO2.sum
 ```
-##add a column for mothers from the F1 generation
+## add a column for mothers from the F1 generation
 ```{r}
 num_moms=vector(mode="numeric",length=length(dataset$F1.Vial))
 ```
 
-##loop through dataset to get the count
+## loop through dataset to get the count
 ```{r}
 for (h in 1:length(dataset$F1.Vial)) { 
   f1_vial=dataset$F1.Vial[h]
@@ -92,19 +90,19 @@ for (h in 1:length(dataset$F1.Vial)) {
 }
 dataset$Num_moms=num_moms
 ```
-##fecundity equals to total # of offsprings divided by # of mothers
+## fecundity equals to total # of offsprings divided by # of mothers
 
 ```{r}
 dataset$fecundity=dataset$total_offspring/dataset$Num_moms
 ```
 
-##producing a cleanup version of the datasets
+## producing a cleanup version of the datasets
 
 ```{r}
 write.csv(dataset,file="Experiment3_data.csv")
 ```
 
-##Fecundity_figure
+## Fecundity_figure
 
 ```{r}
 Fecund_figure=ggplot(aes(y=fecundity,x=Day..letter.of.vial., col=Treatment,label=Num_moms),data=dataset)+ylab("# Progeny per mom")+ggtitle("Total Fecundity vs. Days post-mating")+theme_base()
@@ -114,19 +112,19 @@ Fecund_figure=Fecund_figure+stat_summary(fun.y = median, geom="line",aes(group=T
 Fecund_figure
 ```
 
-##remove vials with few progeny
+## remove vials with few progeny
 
 ```{r}
 dataset=dataset[dataset$total_offspring>=10,]
 ```
 
-##Calculate the recombination rate for each replicate
+## Calculate the recombination rate for each replicate
 
 ```{r}
 dataset$rec_rate_total=(dataset$SCO1.sum+dataset$SCO2.sum)/(dataset$NCO1.sum+dataset$NCO2.sum+dataset$SCO1.sum+dataset$SCO2.sum)
 ```
 
-##Recomb_figure_total
+## Recomb_figure_total
 
 ```{r}
 #The base of the plot
@@ -149,35 +147,35 @@ Recomb_figure=Recomb_figure+ggtitle("Total Recombination rate vs. Days post-mati
 Recomb_figure
 ```
 
-##Statistical analysis
-###the dataset necessary for the statistics is the cleaned up version of the summary data
+## Statistical analysis
+### the dataset necessary for the statistics is the cleaned up version of the summary data
 
 ```{r}
 dataset2=read.csv("cleanedup_exp3.csv",header=T,stringsAsFactors = F)
 dataset2$Treatment=as.character(dataset2$Treatment)
 ```
 
-###get mean fecundity
+### get mean fecundity
 
 ```{r}
 tapply(dataset2$fecundity,dataset2$Treatment,mean)
 tapply(dataset2$fecundity,dataset2$Day,mean)
 ```
 
-###poisson regression, similar to a t-test for count data
+### poisson regression, similar to a t-test for count data
 
 ```{r}
 fit=glm(fecundity~Treatment*Day..letter.of.vial.,data=dataset2,family=quasipoisson)
 summary(fit)
 ```
 
-###anova results for fecundity
+### anova results for fecundity
 
 ```{r}
 anova(fit)
 ```
 
-###post-hoc test for fecundity
+### post-hoc test for fecundity
 
 ```{r}
 fit_contrast <- emmeans::emmeans(fit, "Treatment", by="Day..letter.of.vial.", mode="kenward-roger")
@@ -186,47 +184,47 @@ pheno_contr <- as.data.frame(summary(fit_contr))
 pheno_contr
 ```
 
-###Now do the same, but with recombination rate
+### Now do the same, but with recombination rate
 
-###remove vials with few progeny
+### remove vials with few progeny
 
 ```{r}
 dataset2=dataset2[dataset2$total_offspring>=10,]
 ```
 
-###sum of crossovers in yv
+### sum of crossovers in yv
 
 ```{r}
 dataset2$num_CO_1=dataset2$SCO1.sum+dataset2$SCO2.sum
 ```
 
-###sum of non-crossovers in yv
+### sum of non-crossovers in yv
 
 ```{r}
 dataset2$num_NCO_1=dataset2$total_offspring-(dataset2$SCO1.sum+dataset2$SCO2.sum)
 ```
 
-###total recombination rate
+### total recombination rate
 
 ```{r}
 dataset2$rec_rate_yv=(dataset2$SCO1.sum+dataset2$SCO2.sum)/dataset2$total_offspring
 ```
 
-###get mean recombination
+### get mean recombination
 
 ```{r}
 tapply(dataset2$rec_rate_yv,dataset2$Treatment,mean)
 tapply(dataset2$rec_rate_yv,dataset2$Day,mean)
 ```
 
-###to clean the dataset we get rid of the characters on the left and right of the F1 vial numbers
+### to clean the dataset we get rid of the characters on the left and right of the F1 vial numbers
 
 ```{r}
 dataset2$F1.Vial=as.numeric(gsub("[^0-9\\.]","",dataset2$F1.Vial))
  print(dataset2$F1.Vial)
 ```
 
-###logistic regression, similar to a t-test for count data
+### logistic regression, similar to a t-test for count data
 
 ```{r}
 fit2=glm(cbind(num_CO_1,num_NCO_1)~(1|F1.Vial)+Treatment,data=dataset2,
@@ -234,13 +232,13 @@ fit2=glm(cbind(num_CO_1,num_NCO_1)~(1|F1.Vial)+Treatment,data=dataset2,
 summary(fit2)
 ```
 
-###anova for the recombination rates in vy region
+### anova for the recombination rates in vy region
 
 ```{r}
 anova(fit2)
 ```
 
-###repeat, but only for day A (days 1-2)
+### repeat, but only for day A (days 1-2)
 
 ```{r}
 fita=glm(cbind(num_CO_1,num_NCO_1)~(1|F1.Vial)+Treatment,data=dataset2,
@@ -251,7 +249,7 @@ exp(coef(fita)[3]) #At high temperature, odds of crossover are this times as lik
 
 The odds of having a crossover in the high temperature is `r exp(-0.07490)` times likely for days 1-2.
 
-###repeat, but only for day B (Days 3-4)
+### repeat, but only for day B (Days 3-4)
 
 ```{r}
 fit2b=glm(cbind(num_CO_1,num_NCO_1)~(1|F1.Vial)+Treatment,data=dataset2,
@@ -260,7 +258,7 @@ summary(fit2b)
 exp(coef(fit2b)[3]) #At high temperature, odds of crossover are this times as likely as odds of crossover at low temperature for day B
 ```
 
-###repeat, but only for day C (Days 5-6)
+### repeat, but only for day C (Days 5-6)
 
 ```{r}
 fit2c=glm(cbind(num_CO_1,num_NCO_1)~(1|F1.Vial)+Treatment,data=dataset2,
@@ -269,7 +267,7 @@ summary(fit2c)
 exp(coef(fit2c)[3]) #At high temperature, odds of crossover are this times as likely as odds of crossover at low temperature for day C
 ```
 
-###repeat, but only for day D (Days 7-9)
+### repeat, but only for day D (Days 7-9)
 
 ```{r}
 fit2d=glm(cbind(num_CO_1,num_NCO_1)~(1|F1.Vial)+Treatment,data=dataset2,
@@ -278,7 +276,7 @@ summary(fit2d)
 exp(coef(fit2d)[3]) #At high temperature, odds of crossover are this times as likely as odds of crossover at low temperature for day D
 ```
 
-###repeat, but only for day E (Days 10-12)
+### repeat, but only for day E (Days 10-12)
 
 ```{r}
 fit2e=glm(cbind(num_CO_1,num_NCO_1)~(1|F1.Vial)+Treatment,data=dataset2,
@@ -287,7 +285,7 @@ summary(fit2e)
 exp(coef(fit2e)[3]) #At high temperature, odds of crossover are this times as likely as odds of crossover at low temperature for day E
 ```
 
-###repeat, but only for day F (Days 13-15)
+### repeat, but only for day F (Days 13-15)
 
 ```{r}
 fit2f=glm(cbind(num_CO_1,num_NCO_1)~(1|F1.Vial)+Treatment,data=dataset2,
@@ -296,7 +294,7 @@ summary(fit2f)
 exp(coef(fit2f)[3]) #At high temperature, odds of crossover are this times as likely as odds of crossover at low temperature for day F
 ```
 
-###plotting the odd ratio graph
+### plotting the odd ratio graph
 
 ```{r}
 exp3=read.csv(file="exp3.csv", header=T)
@@ -316,7 +314,7 @@ exp3_odds=ggplot(data=exp3, aes(x=time, y=odds, group=1)) +
 exp3_odds
 ```
 
-##THE END
+## THE END
 
 
 
