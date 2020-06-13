@@ -19,3 +19,4 @@ Instructions to run code on your computer:
 2. Open R studio and set your working directory to the ["code"](https://github.com/StevisonLab/Peak-Plasticity-Project/tree/master/Scripts) folder
 3. Open the R script and run the code.
 4. Raw data files are in the ["raw_data_files"](https://github.com/StevisonLab/Peak-Plasticity-Project/tree/master/raw_data_files) folder.
+5. Experiment 5 script allow the user to analyze the reproducibilty across 3 intervals (sd-y, y-se, v-y).
