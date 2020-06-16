@@ -6,7 +6,7 @@ Meiotic recombination rates vary in response to environmental factors like tempe
 
 # Data Analysis
 
-The R code used for all statistical analysis and to produce all data figures and model tables is included in the folder ["Scripts"](https://github.com/StevisonLab/Peak-Plasticity-Project/tree/master/Scripts) as an R script named after each experiment. 
+The R code used for all statistical analysis and to produce all data figures and model tables is included in the folder ["Scripts"](https://github.com/StevisonLab/Peak-Plasticity-Project/tree/master/Scripts) as an R script divided into each section named after sequential experiments. 
 
 The folder ["raw_data_files"](https://github.com/StevisonLab/Peak-Plasticity-Project/tree/master/raw_data_files) includes the backcrosses, raw phenotyping results, fecundity, and female count data from the mutant screens. A separate csv file with treatment information includes dates and other metadata that would be needed to validate the analysis and conclusions herein. Additionally, a processed and cleaned up data file that includes sums of males and females, as well as crossover counts across each interval per time point, per replicate vial is also included. 
 As an example a tutorial from experiment 3 in the manuscript can be found in the ["Experiment3_Tutorial"](https://github.com/StevisonLab/Peak-Plasticity-Project/tree/master/Experiment3_Tutorial) folder with all of the results and figures for Experiment 3.
