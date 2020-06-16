@@ -17,6 +17,7 @@ The analysis used the following packages. Make sure to read the corresponding do
 Instructions to run code on your computer:
 1. Once you download the github repository, navigate to the ["Scripts"](https://github.com/StevisonLab/Peak-Plasticity-Project/tree/master/Scripts) folder
 2. Open R studio and set your working directory to the ["code"](https://github.com/StevisonLab/Peak-Plasticity-Project/tree/master/Scripts) folder
-3. Open the R script and run the code.
-4. Raw data files are in the ["raw_data_files"](https://github.com/StevisonLab/Peak-Plasticity-Project/tree/master/raw_data_files) folder.
-5. Experiment 5 script allow the user to analyze the reproducibilty across 3 intervals (sd-y, y-se, v-y).
+3. Raw data files are in the ["raw_data_files"](https://github.com/StevisonLab/Peak-Plasticity-Project/tree/master/raw_data_files) folder.
+4. Open the R script in the same folder as the raw data files and run the code.
+5. The script allows to analyze each experiment separately. 
+6. Reproducibility compares between Experiment 2, 3, 4, 5 for sd-y, y-se, and v-y intervals in the same timepoint. 
