@@ -20,4 +20,4 @@ Instructions to run code on your computer:
 3. Raw data files are in the ["raw_data_files"](https://github.com/StevisonLab/Peak-Plasticity-Project/tree/master/raw_data_files) folder.
 4. Open the R script in the same folder as the raw data files and run the code.
 5. The script allows to analyze each experiment separately as well as sections in R can be run together.  
-6. Reproducibility compares between Experiment 1, 3, 4, 5 for sd-y, y-se, and v-y intervals in the same timepoint, 7-9 days post-mating. 
+6. Reproducibility compares between Experiment 2 and 3 for sd-y, y-se, intervals in the same timepoint, 7-9 days post-mating. 
