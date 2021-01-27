@@ -1,4 +1,4 @@
-This folder consists of the R markdown demonstration of the experiment 3 code separated from the master script. The purpose of this demonstration is to familirize the reader with
+This folder consists of the R markdown demonstration of the experiment 1 code separated from the master script. The purpose of this demonstration is to familirize the reader with
 the code and give an idea of what to expect in general analysis of recombination rate. 
 
 This section includes two files:
