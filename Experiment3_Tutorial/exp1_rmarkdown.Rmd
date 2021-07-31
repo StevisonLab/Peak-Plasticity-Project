@@ -1,0 +1,443 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+# Analysis of Recombination rate variation for Experiment 1
+### written by Ulku Huma Altindag
+
+## necessary packages
+
+```{r}
+
+library(ggplot2)
+library(ggthemes)
+library(emmeans)
+library(lme4)
+library(lmerTest)
+library(doBy)
+library(reshape2)
+library(car)
+
+```
+
+## load the datasets
+
+```{r}
+exp3=read.csv("Exp3_rawdata.csv", header= TRUE, stringsAsFactors = TRUE, na.strings="-")
+exp3_backcross=read.csv("Exp3bc_setup.csv", header=T,na.strings="-")
+```
+
+## to make sure R reads it as a character rather than a number.
+
+```{r}
+exp3_backcross$Treatment=as.character(exp3_backcross$Treatment)
+exp3$wildtype=as.numeric(as.character(exp3$wildtype))
+exp3$yellow.vermillion=as.numeric(as.character(exp3$yellow.vermillion))
+exp3$yellow.only=as.numeric(as.character(exp3$yellow.only))
+exp3$vermillion.only=as.numeric(as.character(exp3$vermillion.only))
+exp3$wildtype.1=as.numeric(as.character(exp3$wildtype.1))
+exp3$yellow.vermillion.1=as.numeric(as.character(exp3$yellow.vermillion.1))
+exp3$yellow.only.1=as.numeric(as.character(exp3$yellow.only.1))
+exp3$vermillion.only.1=as.numeric(as.character(exp3$vermillion.only.1))
+```
+
+
+## CO groups were defined for total progeny combined
+
+```{r}
+exp3$SCO1=exp3$yellow.only+exp3$yellow.only.1
+exp3$SCO2=exp3$vermillion.only+exp3$vermillion.only.1
+exp3$NCO1=exp3$wildtype+exp3$wildtype.1
+exp3$NCO2=exp3$yellow.vermillion+exp3$yellow.vermillion.1
+```
+
+```{r}
+haplotypes_exp3=rbind(sum(exp3$SCO1,na.rm = T),
+                      sum(exp3$SCO2,na.rm = T),
+                      sum(exp3$NCO1,na.rm = T),
+                      sum(exp3$NCO2,na.rm = T))
+rownames(haplotypes_exp3)=c("y+", "+st", "++","yst")
+colnames(haplotypes_exp3)=("number of progeny")
+
+```
+
+
+## male haplotypes
+
+```{r}
+exp3$SCO1male=exp3$yellow.only
+exp3$SCO2male=exp3$vermillion.only
+exp3$NCO1male=exp3$wildtype
+exp3$NCO2male=exp3$yellow.vermillion
+
+
+haplotypes_exp3_male=rbind(sum(exp3$SCO1male,na.rm = T),
+                           sum(exp3$SCO2male,na.rm = T),
+                           sum(exp3$NCO1male,na.rm = T),
+                           sum(exp3$NCO2male,na.rm = T))
+rownames(haplotypes_exp3_male)=c("y+", "+st", "++","yst")
+colnames(haplotypes_exp3_male)=("number of progeny")
+
+write.csv(haplotypes_exp3_male,"haplotypes_exp3_male.csv")
+```
+
+## female haplotypes
+
+```{r}
+exp3$SCO1female=exp3$yellow.only.1
+exp3$SCO2female=exp3$vermillion.only.1
+exp3$NCO1female=exp3$wildtype.1
+exp3$NCO2female=exp3$yellow.vermillion.1
+
+haplotypes_exp3_female=rbind(sum(exp3$SCO1female,na.rm = T),
+                             sum(exp3$SCO2female,na.rm = T),
+                             sum(exp3$NCO1female,na.rm = T),
+                             sum(exp3$NCO2female,na.rm = T))
+rownames(haplotypes_exp3_female)=c("y+", "+st", "++","yst")
+colnames(haplotypes_exp3_female)=("number of progeny")
+
+write.csv(haplotypes_exp3_female,"haplotypes_exp3_female.csv")
+
+```
+
+## statistical binomial test for haplotype analysis
+
+```{r}
+pvalues_4_haplotype_analysistotal=cbind(binom.test(c(haplotypes_exp3[1,1],haplotypes_exp3[2,1]),p=0.5)[3],#p-value=0.01388 *
+                                   binom.test(c(haplotypes_exp3[3,1],haplotypes_exp3[4,1]),p=0.5)[3],#p-value = 0.002021 **
+                                   binom.test(c(haplotypes_exp3_female[1,1],haplotypes_exp3_female[2,1]),p=0.5)[3],#p-value = 1.397e-06
+                                   binom.test(c(haplotypes_exp3_female[3,1],haplotypes_exp3_female[4,1]),p=0.5)[3],#p-value = 2.2e-16
+                                   binom.test(c(haplotypes_exp3_male[1,1],haplotypes_exp3_male[2,1]),p=0.5)[3],#p-value=0.1405
+                                   binom.test(c(haplotypes_exp3_male[3,1],haplotypes_exp3_male[4,1]),p=0.5)[3])#p-value = 3.089e-09
+                                   
+colnames(pvalues_4_haplotype_analysistotal)=c("y+ and +st","++ and yst","female y+ and +st","female ++ and yst","male y+ and +st","male ++ and yst")
+
+write.csv(haplotypes_exp3,"haplotypes_exp3.csv")
+write.csv(pvalues_4_haplotype_analysistotal,"pvalues_4_haplotype_analysistotal.csv")
+```
+
+## Using the sanity check, we can see whether R interprets the results accurately.
+
+```{r}
+
+sco_count=sum(exp3$SCO1, na.rm = TRUE)+sum(exp3$SCO2, na.rm = TRUE)
+nco_count=sum(exp3$NCO1+exp3$NCO2, na.rm = TRUE)
+num_samples=sum(nco_count+sco_count, na.rm = TRUE)
+
+(sum(exp3$SCO1, na.rm = TRUE)+sum(exp3$SCO2, na.rm = TRUE))/num_samples
+```
+
+## merge with treatment data (This is important for summarization of the data)
+
+```{r}
+
+exp3_merged <- merge(exp3, exp3_backcross, by.x = "Vial..", by.y = "Vial.number", all=T)
+exp3_merged = na.omit(exp3_merged)
+dataset=summaryBy(SCO1+SCO2+NCO1+NCO2~F1.Vial+Day..letter.of.vial.+Treatment,data=exp3_merged, FUN=sum,na.rm=T)
+
+```
+
+## calculating the fecundity
+
+## add in a column for total offspring
+
+```{r}
+
+dataset$total_offspring=dataset$SCO1.sum + dataset$SCO2.sum + dataset$NCO1.sum + dataset$NCO2.sum
+
+```
+
+## add a column for mothers from the F1 generation
+
+```{r}
+
+num_moms=vector(mode="numeric",length=length(dataset$F1.Vial))
+
+```
+
+
+### continuing the haplotype analysis in order to calculate them with respect to temperature and day
+
+```{r}
+
+yonly=tapply(dataset$SCO1.sum,list(dataset$Treatment,dataset$Day..letter.of.vial.),sum,na.rm=T)
+stonly=tapply(dataset$SCO2.sum,list(dataset$Treatment,dataset$Day..letter.of.vial.),sum,na.rm=T)
+wild=tapply(dataset$NCO1.sum,list(dataset$Treatment,dataset$Day..letter.of.vial.),sum,na.rm=T)
+mutant=tapply(dataset$NCO2.sum,list(dataset$Treatment,dataset$Day..letter.of.vial.),sum,na.rm=T)
+
+exp3_haplotype_byday_and_treatment=rbind(yonly,stonly,wild,mutant)
+#20C y+ and +st
+pvaluesfor_20C_SCO_yonly_stonly=cbind(binom.test(c(yonly[1,1],stonly[1,1]),p=0.5)[3], # p-value = 0.7713
+                                      binom.test(c(yonly[1,2],stonly[1,2]),p=0.5)[3], # p-value = 0.1769
+                                      binom.test(c(yonly[1,3],stonly[1,3]),p=0.5)[3], # p-value = 0.8831
+                                      binom.test(c(yonly[1,4],stonly[1,4]),p=0.5)[3], # p-value = 2.701e-05 ***
+                                      binom.test(c(yonly[1,5],stonly[1,5]),p=0.5)[3], # p-value = 0.01135 *
+                                      binom.test(c(yonly[1,6],stonly[1,6]),p=0.5)[3]) # p-value = 2.939e-06 ***
+colnames(pvaluesfor_20C_SCO_yonly_stonly)=c("1-2","3-4","5-6","7-9","10-12","13-15")
+#20C ++ and yst
+pvaluesfor_20C_NCO_wild_mutant=cbind(binom.test(c(wild[1,1],mutant[1,1]),p=0.5)[3], # p-value = 0.474
+                                      binom.test(c(wild[1,2],mutant[1,2]),p=0.5)[3], # p-value = 0.9419
+                                      binom.test(c(wild[1,3],mutant[1,3]),p=0.5)[3], # p-value = 0.7315
+                                      binom.test(c(wild[1,4],mutant[1,4]),p=0.5)[3], # p-value = 0.00579 **
+                                      binom.test(c(wild[1,5],mutant[1,5]),p=0.5)[3], # p-value = 0.03797 *
+                                      binom.test(c(wild[1,6],mutant[1,6]),p=0.5)[3]) # p-value = 2.942e-08 ***
+colnames(pvaluesfor_20C_NCO_wild_mutant)=c("1-2","3-4","5-6","7-9","10-12","13-15")
+#25C y+ and +st
+pvaluesfor_25C_SCO_yonly_stonly=cbind(binom.test(c(yonly[2,1],stonly[2,1]),p=0.5)[3] ,# p-value = 0.19
+                                     binom.test(c(yonly[2,2],stonly[2,2]),p=0.5)[3] ,# p-value = 0.05176
+                                     binom.test(c(yonly[2,3],stonly[2,3]),p=0.5)[3] ,# p-value = 0.5485
+                                     binom.test(c(yonly[2,4],stonly[2,4]),p=0.5)[3] ,# p-value = 2.49e-10 ***
+                                     binom.test(c(yonly[2,5],stonly[2,5]),p=0.5)[3] ,# p-value = 0.1055 
+                                     binom.test(c(yonly[2,6],stonly[2,6]),p=0.5)[3] )# p-value = 3.761e-05 ***
+colnames(pvaluesfor_25C_SCO_yonly_stonly)=c("1-2","3-4","5-6","7-9","10-12","13-15")
+#25C ++ and yst
+pvaluesfor_25C_NCO_wild_mutant=cbind(binom.test(c(wild[2,1],mutant[2,1]),p=0.5)[3], # p-value = 0.8626
+                                      binom.test(c(wild[2,2],mutant[2,2]),p=0.5)[3], # p-value = 1
+                                      binom.test(c(wild[2,3],mutant[2,3]),p=0.5)[3],# p-value = 0.02208 *
+                                      binom.test(c(wild[2,4],mutant[2,4]),p=0.5)[3], # p-value = 0.6691
+                                      binom.test(c(wild[2,5],mutant[2,5]),p=0.5)[3], # p-value = 0.0006782 ***
+                                      binom.test(c(wild[2,6],mutant[2,6]),p=0.5)[3]) # p-value = 0.0357 *
+colnames(pvaluesfor_25C_NCO_wild_mutant)=c("1-2","3-4","5-6","7-9","10-12","13-15")
+pvalues_4_haplotype_analysis=rbind(pvaluesfor_20C_SCO_yonly_stonly,pvaluesfor_20C_NCO_wild_mutant,pvaluesfor_25C_SCO_yonly_stonly,pvaluesfor_25C_NCO_wild_mutant)
+rownames(pvalues_4_haplotype_analysis)=c("pvaluesfor_20C_SCO_yonly_stonly","pvaluesfor_20C_NCO_wild_mutant","pvaluesfor_25C_SCO_yonly_stonly","pvaluesfor_25C_NCO_wild_mutant")
+
+write.csv(exp3_haplotype_byday_and_treatment,"exp3_haplotype_byday_and_treatment.csv")
+write.csv(pvalues_4_haplotype_analysis,"exp3_pvalues_4_haplotype_analysis.csv")
+```
+ 
+## loop through dataset to get the count
+
+```{r}
+for (h in 1:length(dataset$F1.Vial)) { 
+  f1_vial=dataset$F1.Vial[h]
+  #  f1_vial=as.numeric(gsub("[^0-9\\.]","",f1_vial))
+  #  print(f1_vial)
+  mom_ct=length(unique(sort(subset(exp3_merged,exp3_merged$F1.Vial==f1_vial)$Vial..)))
+  #store result in the vector
+  num_moms[h]=mom_ct
+}
+dataset$Num_moms=num_moms
+```
+
+
+## fecundity equals to total # of offsprings divided by # of mothers
+
+```{r}
+##fecundity equals to total # of offsprings divided by # of mothers
+dataset$fecundity=dataset$total_offspring/dataset$Num_moms
+
+##producing a cleanup version of the datasets
+write.csv(dataset,file="Experiment3_data.csv")
+```
+
+## Statistical analysis
+### the dataset necessary for the statistics is the cleaned up version of the summary data
+
+```{r}
+
+dataset2=read.csv("Experiment3_combined dataset.csv",header=T,stringsAsFactors = F)
+dataset2$Treatment=as.character(dataset2$Treatment)
+```
+
+### poisson regression, similar to a t-test for count data
+
+```{r}
+
+fit=glm(fecundity~Treatment*Day..letter.of.vial.,data=dataset2,family=quasipoisson)
+```
+
+### anova results for fecundity
+
+```{r}
+
+Experiment3_fecundity_stats=anova(fit, test="Chisq")
+write.csv(Experiment3_fecundity_stats,"Experiment3_fecundity_anova.csv")
+```
+
+### post-hoc test for fecundity
+
+```{r}
+
+fit_contrast <- emmeans::emmeans(fit, "Treatment", by="Day..letter.of.vial.", mode="kenward-roger")
+fit_contr <- contrast(fit_contrast, method="trt.vs.ctrl")
+pheno_contr <- as.data.frame(summary(fit_contr))
+pheno_contr
+write.csv(pheno_contr,"Experiment3_fecundity_posthoc.csv")
+
+```
+
+
+## Fecundity Plots
+
+
+```{r fecundity, echo=FALSE}
+Fecund_figure_exp3=ggplot(dataset, aes(x=Day..letter.of.vial., y=fecundity, col=Treatment)) + theme_base()+ylab("# Progeny per mom")+ggtitle("Experiment 3")+theme(axis.text.x = element_text(angle = 45))+
+  geom_boxplot()+scale_x_discrete(name="Days", labels=c("1-2","3-4","5-6","7-9","10-12","13-15"))+
+  #annotate(geom="text", x=1, y=40, label=sig[1],size=5)+annotate(geom="text", x=2, y=40, label=sig[2],size=5)+annotate(geom="text", x=3, y=40, label=sig[3],size=5)+annotate(geom="text", x=4, y=40, label=sig[4],size=5)+
+  scale_color_manual(values = c("blue","red"))
+Fecund_figure_exp3
+```
+
+
+## remove vials with few progeny
+
+```{r}
+dataset=dataset[dataset$total_offspring>=10,]
+```
+
+## Calculate the recombination rate for each replicate using Kosambi correction
+
+```{r}
+dataset$rec_rate_total=(dataset$SCO1.sum+dataset$SCO2.sum)/(dataset$NCO1.sum+dataset$NCO2.sum+dataset$SCO1.sum+dataset$SCO2.sum)
+dataset$kosambi_rec_rate=((2.71^(4*dataset$rec_rate_total)-1)/2*(2.71^(-4*dataset$rec_rate_total)+1))/10
+
+write.csv(dataset,"experiment3_combined dataset.csv")
+```
+
+## Skew in between different crossover types
+```{r}
+for (n in 1:length(dataset$F1.Vial)) {
+  dataset$NCO_skew[n]=min(dataset$NCO1.sum[n],dataset$NCO2.sum[n])/max(dataset$NCO1.sum[n],dataset$NCO2.sum[n])
+}
+
+for (n in 1:length(dataset$F1.Vial)) {
+  dataset$SCO1_skew[n]=min(dataset$SCO1.sum[n],dataset$SCO2.sum[n])/max(dataset$SCO1.sum[n],dataset$SCO2.sum[n])
+}
+
+skew=dataset[, c(3,13,14)]
+
+skew2=melt(skew, id="Treatment")
+
+```
+
+
+```{r skew, echo=FALSE}
+skew_figure_exp3=ggplot(skew2, aes(x = Treatment, y = value, color = variable)) +  # ggplot function
+  geom_boxplot()+theme_base()+ylab("haplotype bias")+xlab("Treatment")
+
+skew_figure_exp3
+```
+
+
+### Now do the same, but with recombination rate
+
+### remove vials with few progeny
+
+```{r}
+dataset2=dataset2[dataset2$total_offspring>=10,]
+```
+
+### sum of crossovers in exp3
+
+```{r}
+dataset2$num_CO_1=dataset2$SCO1.sum+dataset2$SCO2.sum
+```
+
+### sum of non-crossovers in exp3
+
+```{r}
+dataset2$num_NCO_1=dataset2$total_offspring-(dataset2$SCO1.sum+dataset2$SCO2.sum)
+```
+
+### total recombination rate
+
+```{r}
+dataset2$rec_rate_exp3=(dataset2$SCO1.sum+dataset2$SCO2.sum)/dataset2$total_offspring
+```
+
+### get mean recombination for day 7-9
+
+```{r}
+tapply(dataset2$rec_rate_exp3,dataset2$Treatment,mean)
+tapply(dataset2$rec_rate_exp3,dataset2$Day,mean)
+
+g=subset(dataset2, dataset2$Day..letter.of.vial.=="D")
+g
+
+```
+
+
+
+### to clean the dataset we get rid of the characters on the left and right of the F1 vial numbers
+
+```{r}
+dataset2$F1.Vial=as.numeric(gsub("[^0-9\\.]","",dataset2$F1.Vial))
+#print(dataset2$F1.Vial)
+
+```
+
+### logistic regression, similar to a t-test for count data
+
+```{r}
+fit2=glmer(cbind(num_CO_1,num_NCO_1)~(1|F1.Vial)+Treatment*Day..letter.of.vial.,data=dataset2,
+           family=binomial(link="logit"))
+
+```
+
+
+### anova for the recombination rates in vy region
+
+```{r}
+anova_vy=Anova(fit2,test="Chisq")
+write.csv(anova_vy,"experiment3_recrate_anova.csv")
+
+fit_contrast_rec <- emmeans::emmeans(fit2, "Treatment", by="Day..letter.of.vial.", mode="kenward-roger")
+fit_contr_rec <- contrast(fit_contrast_rec, method="trt.vs.ctrl")
+
+pheno_contr_rec <- as.data.frame(summary(fit_contr_rec))
+pheno_contr_rec
+write.csv(pheno_contr_rec,"Experiment3_recrate_vy_posthoc_table.csv")
+```
+
+##add in odds ratio and standard error
+
+```{r}
+vy_or=exp(pheno_contr_rec$estimate)
+vy_error=(pheno_contr_rec$SE)
+x=cbind(vy_or,vy_error)
+day=c("a","b","c","d","e","f")
+x=cbind(day,x)
+
+```
+# convert p-values to stars for plot
+
+```{r}
+vy_sig=ifelse(pheno_contr_rec$p.value<0.001,"***",ifelse(pheno_contr_rec$p.value<0.01,"**",ifelse(pheno_contr_rec$p.value<0.05,"*","")))
+
+y=cbind(x,vy_sig)
+odds_ratios=y
+write.csv(y,"Experiment3_odds.csv")
+
+odds_ratios=read.csv("Experiment3_odds.csv", header=TRUE)
+```
+
+## Recomb_figure_total line plot
+
+```{r recomb, echo=FALSE}
+Recomb_figure=ggplot(aes(y=rec_rate_total,x=Day..letter.of.vial., col=Treatment,label=total_offspring),data=dataset)+ylab("% recombination")+ggtitle("Total Recombination rate vs. Days post-mating")+theme_base()
+Recomb_figure=Recomb_figure+scale_colour_manual(values=c("blue", "red"))+geom_point(alpha=0.6,size=3)+scale_x_discrete(name="Day",labels=c("1-2","3-4","5-6","7-9","10-12","13-15"))
+Recomb_figure=Recomb_figure+stat_summary(fun = median, geom="line",aes(group=Treatment),size=2)
+Recomb_figure=Recomb_figure+ggtitle("Total Recombination rate vs. Days post-mating") +geom_text(check_overlap = F,hjust = 0, nudge_x = 0.05,angle=45,size=3) +ylim(0,1.2)
+Recomb_figure
+```
+
+## Recomb figure boxplot
+
+```{r recombbox, echo=FALSE}
+
+Recomb_figure_yst=ggplot(aes(y=rec_rate_total,x=Day..letter.of.vial., col=Treatment),data = dataset)+scale_colour_manual(values=c("blue","red"))+geom_boxplot()+ylab("% recombination")+theme_base()+scale_x_discrete(name="Days post-mating",labels=c("1-2","3-4","5-6","7-9","10-12","13-15"))+
+  ggtitle("sd-y Interval")+ylim(0,1)+
+  annotate(geom="text", x=1, y=0.58, label=vy_sig[1],size=10)+annotate(geom="text", x=2, y=0.58, label=vy_sig[2],size=10)+annotate(geom="text", x=3, y=0.58, label=vy_sig[3],size=10)+annotate(geom="text", x=4, y=0.78, label=vy_sig[4],size=10)+annotate(geom="text", x=5, y=0.78,label=vy_sig[5],size=10)+annotate(geom="text",x=6,y=0.78,label=vy_sig[6],size=10)
+Recomb_figure_yst
+
+```
+
+
+```{r recombodds, echo=FALSE}
+odds_figure_exp3=ggplot(aes(y=vy_or,x=day,group=1),data=odds_ratios)+scale_colour_manual(values=c("black"))+ggtitle("Experiment 3")+
+  geom_point(size=3)+geom_line(size=2)+ylab("Odds Ratios")+theme_base()+geom_hline(yintercept = 1,linetype="dashed",color="grey")+ylim(0.5,2.6)+theme(axis.text.x = element_text(angle = 45))+
+  scale_x_discrete(name="Days post-mating",labels=c("1-2","3-4","5-6","7-9","10-12","13-15"))+geom_line(show.legend = TRUE)+geom_errorbar(aes(ymin=vy_or-vy_error,ymax=vy_or+vy_error))+
+  annotate(geom="text", x=1, y=1.75, label=vy_sig[1],color="black",size=10)+annotate(geom="text", x=2, y=1.75, label=vy_sig[2],color="black",size=10)+annotate(geom="text", x=3, y=1.75, label=vy_sig[3],color="black",size=8)+annotate(geom="text", x=4, y=1.75, label=vy_sig[4],color="black",size=8)+annotate(geom="text", x=5, y=1.75, label=vy_sig[5],color="black",size=10)+annotate(geom="text", x=5.75, y=1.75, label=vy_sig[6],color="black",size=8)
+odds_figure_exp3
+```
