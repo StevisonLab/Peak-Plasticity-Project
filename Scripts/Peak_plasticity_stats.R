@@ -2,7 +2,7 @@
 #"Refining the timing of recombination rate plasticity in response to temperature in Drosophila pseudoobscura"
 #written by Ulku Huma Altindag
 
-#It is split into 5 code sections which corresponds to the each sequential experiment in this study
+#It is split into 18 code sections which corresponds to the each sequential experiment in this study
 #These sections can be expanded/collapsed in RStudio 
 #Expand: either click on the arrow in the gutter or on the icon that overlays the folded code 
 #Collapse: click on the arrow in the gutter
@@ -22,7 +22,7 @@ library(car)
 #in the same folder as the code in.
 
 
-# Experiment1 -------------------------------------------------------------
+# Pilot Experiment 1 (exp1) -------------------------------------------------------------
 
 #load the datasets
 exp1=read.csv("Exp1_rawdata.csv", header= TRUE)
@@ -272,7 +272,7 @@ median(dataset$Num_moms[dataset$Treatment=="24"])
 sum(dataset$num_CO[dataset$Treatment=="18"])+sum(dataset$num_NCO[dataset$Treatment=="18"])
 sum(dataset$num_NCO[dataset$Treatment=="24"])+sum(dataset$num_CO[dataset$Treatment=="24"])
 
-# Experiment2 -------------------------------------------------------------
+# Pilot Experiment2  (exp2)-------------------------------------------------------------
 
 #load the datasets
 exp2=read.csv("Exp2_rawdata.csv", header= TRUE, na.strings="-")
@@ -540,7 +540,7 @@ sum(dataset2$total_offspring[dataset2$Treatment=="20"])
 sum(dataset2$total_offspring[dataset2$Treatment=="25"])
 
 
-# Experiment3 -------------------------------------------------------------
+# Experiment 1 (Exp3) -------------------------------------------------------------
 
 ##load the datasets
 
@@ -565,7 +565,7 @@ exp3$vermillion.only.1=as.numeric(as.character(exp3$vermillion.only.1))
 exp3$SCO1=exp3$yellow.only+exp3$yellow.only.1
 exp3$SCO2=exp3$vermillion.only+exp3$vermillion.only.1
 exp3$NCO1=exp3$wildtype+exp3$wildtype.1
-exp3$NCO2=exp3$yellow.vermillion+exp3$vermillion.only.1
+exp3$NCO2=exp3$yellow.vermillion+exp3$yellow.vermillion.1
 
 sum(exp3$SCO1,na.rm = T)
 sum(exp3$SCO2,na.rm = T)
@@ -614,7 +614,7 @@ write.csv(haplotypes_exp3_male,"haplotypes_exp3_male.csv")
 exp3$SCO1female=exp3$yellow.only.1
 exp3$SCO2female=exp3$vermillion.only.1
 exp3$NCO1female=exp3$wildtype.1
-exp3$NCO2female=exp3$vermillion.only.1
+exp3$NCO2female=exp3$yellow.vermillion.1
 sum(exp3$SCO1female,na.rm = T)
 sum(exp3$SCO2female,na.rm = T)
 sum(exp3$NCO1female,na.rm = T)
@@ -628,7 +628,9 @@ rownames(haplotypes_exp3_female)=c("y+", "+st", "++","yst")
 colnames(haplotypes_exp3_female)=("number of progeny")
 
 write.csv(haplotypes_exp3_female,"haplotypes_exp3_female.csv")
-
+binom.test(2388,4608, p=0.5)
+binom.test(1178,2371, p=0.5)
+binom.test(2452,5126, p=0.5)
 ##Using the sanity check, we can see whether R interprets the results accurately.
 
 sco_count=sum(exp3$SCO1, na.rm = TRUE)+sum(exp3$SCO2, na.rm = TRUE)
@@ -738,7 +740,27 @@ dataset$kosambi_rec_rate=((2.71^(4*dataset$rec_rate_total)-1)/2*(2.71^(-4*datase
 
 
 write.csv(dataset,"experiment3_combined dataset.csv")
+for (n in 1:length(dataset$F1.Vial)) {
+  dataset$NCO_skew[n]=min(dataset$NCO1.sum[n],dataset$NCO2.sum[n])/max(dataset$NCO1.sum[n],dataset$NCO2.sum[n])
+}
 
+for (n in 1:length(dataset$F1.Vial)) {
+  dataset$SCO1_skew[n]=min(dataset$SCO1.sum[n],dataset$SCO2.sum[n])/max(dataset$SCO1.sum[n],dataset$SCO2.sum[n])
+}
+
+
+
+skew=dataset[, c(3,13,14)]
+
+skew2=melt(skew, id="Treatment")
+
+
+pdf("skew_exp3.pdf")
+skew_figure_exp3=ggplot(skew2, aes(x = Treatment, y = value, color = variable)) +  # ggplot function
+  geom_boxplot()+theme_base()+ylab("haplotype bias")+xlab("Treatment")
+
+skew_figure_exp3
+dev.off()
 
 
 ##Recomb_figure_total
@@ -748,6 +770,16 @@ Recomb_figure=Recomb_figure+scale_colour_manual(values=c("blue", "red"))+geom_po
 Recomb_figure=Recomb_figure+stat_summary(fun = median, geom="line",aes(group=Treatment),size=2)
 Recomb_figure=Recomb_figure+ggtitle("Total Recombination rate vs. Days post-mating") +geom_text(check_overlap = F,hjust = 0, nudge_x = 0.05,angle=45,size=3) +ylim(0,1.2)
 Recomb_figure
+dev.off()
+
+
+pdf("Exp3_boxplot.pdf")
+
+Recomb_figure_yst=ggplot(aes(y=rec_rate_total,x=Day..letter.of.vial., col=Treatment,label=total_offspring),data=dataset)+scale_colour_manual(values=c("blue","red"))+geom_boxplot()+ylab("% recombination")+theme_base()+scale_x_discrete(name="Days post-mating",labels=c("1-2","3-4","5-6","7-9","10-12","13-15"))
+Recomb_figure_yst=Recomb_figure_yst+ggtitle("sd-y Interval")+ylim(0,1)
+Recomb_figure_yst=Recomb_figure_yst+annotate(geom="text", x=1, y=0.58, label=yv_sig[1],size=10)+annotate(geom="text", x=2, y=0.58, label=yv_sig[2],size=10)+annotate(geom="text", x=3, y=0.58, label=yv_sig[3],size=10)+annotate(geom="text", x=4, y=0.58, label=yv_sig[4],size=10)+annotate(geom="text",x=5,label=yv_sig[5],size=10)+annotate(geom="text",x=6,label=yv_sig[6],size=10)
+Recomb_figure_yst
+
 dev.off()
 
 ##Statistical analysis
@@ -799,7 +831,14 @@ g
 ###get mean recombination
 tapply(g$rec_rate_exp3,g$Treatment,mean)
 tapply(g$rec_rate_exp3,g$Day,mean)
+tapply(g$total_offspring,g$Treatment,sum)
 
+h=subset(dataset2, dataset2$Day..letter.of.vial.=="F")
+h
+
+tapply(h$rec_rate_exp3,h$Treatment,mean)
+tapply(h$rec_rate_exp3,h$Day,mean)
+tapply(h$total_offspring,h$Treatment,sum)
 
 ###to clean the dataset we get rid of the characters on the left and right of the F1 vial numbers
 dataset2$F1.Vial=as.numeric(gsub("[^0-9\\.]","",dataset2$F1.Vial))
@@ -834,6 +873,15 @@ write.csv(y,"Experiment3_odds.csv")
 
 odds_ratios=read.csv("Experiment3_odds.csv", header=TRUE)
 
+pdf("Exp3_boxplot.pdf")
+
+Recomb_figure_yst=ggplot(aes(y=rec_rate_total,x=Day..letter.of.vial., col=Treatment,label=total_offspring),data=dataset)+scale_colour_manual(values=c("blue","red"))+geom_boxplot()+ylab("% recombination")+theme_base()+scale_x_discrete(name="Days post-mating",labels=c("1-2","3-4","5-6","7-9","10-12","13-15"))
+Recomb_figure_yst=Recomb_figure_yst+ggtitle("y-st Interval")+ylim(0,1)
+Recomb_figure_yst=Recomb_figure_yst+annotate(geom="text", x=1, y=0.80, label=vy_sig[1],color="black",size=10)+annotate(geom="text", x=2, y=0.80, label=vy_sig[2],color="black",size=10)+annotate(geom="text", x=3, y=0.80, label=vy_sig[3],color="black",size=8)+annotate(geom="text", x=4, y=0.80, label=vy_sig[4],color="black",size=8)+annotate(geom="text", x=5, y=0.80, label=vy_sig[5],color="black",size=10)+annotate(geom="text", x=6, y=0.80, label=vy_sig[6],color="black",size=8)
+Recomb_figure_yst
+
+dev.off()
+
 pdf("Experiment3.odds_new.pdf")
 odds_figure_exp3=ggplot(aes(y=vy_or,x=day,group=1),data=odds_ratios)+scale_colour_manual(values=c("black"))+ggtitle("Experiment 3")+
   geom_point(size=3)+geom_line(size=2)+ylab("Odds Ratios")+theme_base()+geom_hline(yintercept = 1,linetype="dashed",color="grey")+ylim(0.5,2.6)+theme(axis.text.x = element_text(angle = 45))+
@@ -845,7 +893,7 @@ dev.off()
 sum(dataset2$total_offspring[dataset2$Treatment=="20°"])
 sum(dataset2$total_offspring[dataset2$Treatment=="25°"])
 
-# Experiment4 -------------------------------------------------------------
+# Experiment 2 (Exp4) -------------------------------------------------------------
 
 #read in cross data with treatment information
 exp4=read.csv("Exp4_rawdata.csv",header=T)
@@ -1062,14 +1110,50 @@ write.csv(exp4_pvalues_haplotype_types_bydayandtreatment,"exp4_pvalues_haplotype
 #use data to get fecundity calculation
 dataset2$fecundity=dataset2$total_offspring/dataset2$Num_moms
 dataset2$Treatment=as.factor(dataset2$Treatment)
+
+#divide total_offspring females and males
+dataset2$fecundity_female=dataset2$Numbfemales.sum/dataset2$Num_moms
+dataset2$fecundity_male=dataset2$male.sum/dataset2$Num_moms
+
 #We will write our data into a file so we can read it in for later analysis. 
 write.csv(dataset2,file="Experiment4_cleanedup.csv")
 
+for (n in 1:length(dataset2$F1.Vial)) {
+dataset2$NCO_skew[n]=min(dataset2$gt1a_111.sum[n],dataset2$gt1b_000.sum[n])/max(dataset2$gt1a_111.sum[n],dataset2$gt1b_000.sum[n])
+}
+summary(dataset2$NCO_skew)
+
+
+for (n in 1:length(dataset2$F1.Vial)) {
+  dataset2$SCO1_skew[n]=min(dataset2$gt2a_011.sum[n],dataset2$gt2b_100.sum[n])/max(dataset2$gt2a_011.sum[n],dataset2$gt2b_100.sum[n])
+}
+
+
+for (n in 1:length(dataset2$F1.Vial)) {
+  dataset2$SCO2_skew[n]=min(dataset2$gt3a_110.sum[n],dataset2$gt3b_001.sum[n])/max(dataset2$gt3a_110.sum[n],dataset2$gt3b_001.sum[n])
+}
+
+for (n in 1:length(dataset2$F1.Vial)) {
+  dataset2$DCO_skew[n]=min(dataset2$gt4a_010.sum[n],dataset2$gt4b_101.sum[n])/max(dataset2$gt4a_010.sum[n],dataset2$gt4b_101.sum[n])
+}
+
+
+skew=dataset2[, c(3,21,22,23,24)]
+
+skew2=melt(skew, id="Treatment")
+
+
+pdf("skew_exp4.pdf")
+skew_figure_exp4=ggplot(skew2, aes(x = Treatment, y = value, color = variable)) +  # ggplot function
+  geom_boxplot()+theme_base()+ylab("haplotype bias")+xlab("Treatment")
+
+skew_figure_exp4
+dev.off()
 #Fecundity_figure
 #dataset2=read.csv("Experiment4_cleanedup.csv")
 
 #poisson regression, similar to a t-test for count data
-fit=glm(fecundity~Treatment*Day,data=dataset2,family=quasipoisson)
+fit=glm(fecundity_male~Treatment*Day,data=dataset2,family=quasipoisson)
 summary(fit)
 anova_fec=anova(fit, test="Chisq")
 anova_fec
@@ -1081,7 +1165,7 @@ fit_contr <- contrast(fit_contrast, method="trt.vs.ctrl")
 
 pheno_contr <- as.data.frame(summary(fit_contr))
 pheno_contr
-write.csv(pheno_contr,"Exp4_fecundity_posthoc_table.csv")
+write.csv(pheno_contr,"Exp4_fecundity_male_posthoc_table.csv")
 
 #convert p-values to stars for plot
 sig=ifelse(pheno_contr$p.value<0.001,"***",ifelse(pheno_contr$p.value<0.01,"**",ifelse(pheno_contr$p.value<0.05,"*","")))
@@ -1101,6 +1185,73 @@ Fecund_figure_exp4=ggplot(dataset2, aes(x=Day, y=fecundity, col=Treatment)) + th
   geom_boxplot()+scale_x_discrete(name="Days", labels=c("1-3","4-6","7-9","10-12"))+
   annotate(geom="text", x=1, y=135, label=sig[1],size=10)+annotate(geom="text", x=2, y=135, label=sig[2],size=10)+annotate(geom="text", x=3, y=135, label=sig[3],size=10)+annotate(geom="text", x=4, y=135, label=sig[4],size=10)+
 scale_color_manual(values = c("blue","red"))
+Fecund_figure_exp4
+
+fecundity_female_male=dataset2[,c(2,3,21,22)]
+fecundity_female_male$treatment_day=paste(fecundity_female_male$Treatment,fecundity_female_male$Day,sep = "_")
+fecundity_female_male=fecundity_female_male[,c(3,4,5)]
+fecundity_female_male2=melt(fecundity_female_male, id="treatment_day")
+
+
+pdf("fecundity_male_female_exp4.pdf")
+Fecund_figure_exp5_maleandfemale=ggplot(fecundity_female_male2, aes(x=treatment_day, y=value, col=variable)) + theme_base()+ylab("# Progeny per mom")+ggtitle("Experiment 5")+theme(axis.text.x = element_text(angle = 45))+
+  geom_boxplot()+scale_x_discrete(name="Days", labels=c("21_day1-3","21_day4-6","21_day7-9","21_day10-12","26_day1-3","26_day4-6","26_day7-9","26_day10-12"))+ylim(0,50)+
+  #annotate(geom="text", x=1, y=38, label=sig[1],size=10)+annotate(geom="text", x=2, y=38, label=sig[2],size=10)+annotate(geom="text", x=3, y=38, label=sig[3],size=10)+annotate(geom="text", x=4, y=38, label=sig[4],size=10)+
+  scale_color_manual(values = c("blue","red","green","orange","purple","yellow","pink","black","grey","dark blue"))
+Fecund_figure_exp5_maleandfemale
+dev.off()
+
+
+pdf("fecundity male and female_exp4.pdf")
+
+#poisson regression, similar to a t-test for count data
+fit=glm(fecundity_male~Treatment*Day,data=dataset2,family=quasipoisson)
+summary(fit)
+anova_fec=anova(fit, test="Chisq")
+anova_fec
+write.csv(anova_fec,"Exp4_fecundity_model_table.csv")
+
+
+fit_contrast <- emmeans::emmeans(fit, "Treatment", by="Day", mode="kenward-roger")
+fit_contr <- contrast(fit_contrast, method="trt.vs.ctrl")
+
+pheno_contr <- as.data.frame(summary(fit_contr))
+pheno_contr
+write.csv(pheno_contr,"Exp4_fecundity_male_posthoc_table.csv")
+
+#convert p-values to stars for plot
+sig=ifelse(pheno_contr$p.value<0.001,"***",ifelse(pheno_contr$p.value<0.01,"**",ifelse(pheno_contr$p.value<0.05,"*","")))
+
+
+Fecund_figure_exp4=ggplot(dataset2, aes(x=Day, y=fecundity_male, col=Treatment)) + theme_base()+ylab("# Progeny per mom")+ggtitle("Experiment 4")+theme(axis.text.x = element_text(angle = 45))+
+  geom_boxplot()+scale_x_discrete(name="Days", labels=c("1-3","4-6","7-9","10-12"))+
+  annotate(geom="text", x=1, y=135, label=sig[1],size=10)+annotate(geom="text", x=2, y=135, label=sig[2],size=10)+annotate(geom="text", x=3, y=135, label=sig[3],size=10)+annotate(geom="text", x=4, y=135, label=sig[4],size=10)+
+  scale_color_manual(values = c("blue","red"))
+Fecund_figure_exp4
+
+
+#poisson regression, similar to a t-test for count data
+fit=glm(fecundity_female~Treatment*Day,data=dataset2,family=quasipoisson)
+summary(fit)
+anova_fec=anova(fit, test="Chisq")
+anova_fec
+write.csv(anova_fec,"Exp4_fecundity_model_table.csv")
+
+
+fit_contrast <- emmeans::emmeans(fit, "Treatment", by="Day", mode="kenward-roger")
+fit_contr <- contrast(fit_contrast, method="trt.vs.ctrl")
+
+pheno_contr <- as.data.frame(summary(fit_contr))
+pheno_contr
+write.csv(pheno_contr,"Exp4_fecundity_male_posthoc_table.csv")
+
+#convert p-values to stars for plot
+sig=ifelse(pheno_contr$p.value<0.001,"***",ifelse(pheno_contr$p.value<0.01,"**",ifelse(pheno_contr$p.value<0.05,"*","")))
+
+Fecund_figure_exp4=ggplot(dataset2, aes(x=Day, y=fecundity_female, col=Treatment)) + theme_base()+ylab("# Progeny per mom")+ggtitle("Experiment 4")+theme(axis.text.x = element_text(angle = 45))+
+  geom_boxplot()+scale_x_discrete(name="Days", labels=c("1-3","4-6","7-9","10-12"))+
+  annotate(geom="text", x=1, y=135, label=sig[1],size=10)+annotate(geom="text", x=2, y=135, label=sig[2],size=10)+annotate(geom="text", x=3, y=135, label=sig[3],size=10)+annotate(geom="text", x=4, y=135, label=sig[4],size=10)+
+  scale_color_manual(values = c("blue","red"))
 Fecund_figure_exp4
 
 dev.off()
@@ -1307,7 +1458,7 @@ COI_figure=COI_figure+stat_summary(fun = median, geom="line",aes(group=Treatment
 COI_figure
 
 
-# Experiment5 -------------------------------------------------------------
+# Experiment 3 (Exp5)-------------------------------------------------------------
 
 #Data files are uploaded
 exp5=read.csv("Exp5_rawdata.csv",header=T)
@@ -1440,9 +1591,46 @@ dataset2$Num_moms=num_moms
 
 #use data to get fecundity calculation
 dataset2$fecundity=dataset2$total_offspring/dataset2$Num_moms
+dataset2$fecundity_male=dataset2$Numbfemales.sum/dataset2$Num_moms
+dataset2$fecundity_female=dataset2$male.sum/dataset2$Num_moms
+#to calculate the skew based on the inviability of mutations
+dataset2$skew=dataset$
 
 #We will write our data into a file so we can read it in for later analysis. 
 write.csv(dataset2,file="Experiment5_cleanedup.csv")
+
+
+for (n in 1:length(dataset2$F1.Vial)) {
+  dataset2$NCO_skew[n]=min(dataset2$gt1a_111.sum[n],dataset2$gt1b_000.sum[n])/max(dataset2$gt1a_111.sum[n],dataset2$gt1b_000.sum[n])
+}
+summary(dataset2$NCO_skew)
+
+
+for (n in 1:length(dataset2$F1.Vial)) {
+  dataset2$SCO1_skew[n]=min(dataset2$gt2a_011.sum[n],dataset2$gt2b_100.sum[n])/max(dataset2$gt2a_011.sum[n],dataset2$gt2b_100.sum[n])
+}
+
+
+for (n in 1:length(dataset2$F1.Vial)) {
+  dataset2$SCO2_skew[n]=min(dataset2$gt3a_110.sum[n],dataset2$gt3b_001.sum[n])/max(dataset2$gt3a_110.sum[n],dataset2$gt3b_001.sum[n])
+}
+
+for (n in 1:length(dataset2$F1.Vial)) {
+  dataset2$DCO_skew[n]=min(dataset2$gt4a_010.sum[n],dataset2$gt4b_101.sum[n])/max(dataset2$gt4a_010.sum[n],dataset2$gt4b_101.sum[n])
+}
+
+
+skew=dataset2[, c(3,21,22,23,24)]
+
+skew2=melt(skew, id="Treatment")
+
+
+pdf("skew_exp5.pdf")
+skew_figure_exp5=ggplot(skew2, aes(x = Treatment, y = value, color = variable)) +  # ggplot function
+  geom_boxplot()+theme_base()+ylab("haplotype bias")+xlab("Treatment")
+
+skew_figure_exp5
+dev.off()
 
 #gamete analysis by treatment
 
@@ -1575,6 +1763,68 @@ Fecund_figure_exp5=ggplot(dataset2, aes(x=Day, y=fecundity, col=Treatment)) + th
   annotate(geom="text", x=1, y=38, label=sig[1],size=10)+annotate(geom="text", x=2, y=38, label=sig[2],size=10)+annotate(geom="text", x=3, y=38, label=sig[3],size=10)+annotate(geom="text", x=4, y=38, label=sig[4],size=10)+
 scale_color_manual(values = c("blue","red"))
 Fecund_figure_exp5
+
+fecundity_female_male=dataset2[,c(2,3,21,22)]
+fecundity_female_male$treatment_day=paste(fecundity_female_male7$Treatment,fecundity_female_male$Day,sep = "_")
+fecundity_female_male=fecundity_female_male[,c(3,4,5)]
+fecundity_female_male2=melt(fecundity_female_male, id="treatment_day")
+
+pdf("fecundity_male_female.pdf")
+Fecund_figure_exp5_maleandfemale=ggplot(fecundity_female_male2, aes(x=treatment_day, y=value, col=variable)) + theme_base()+ylab("# Progeny per mom")+ggtitle("Experiment 5")+theme(axis.text.x = element_text(angle = 45))+
+  geom_boxplot()+scale_x_discrete(name="Days", labels=c("21_day6","_21_day7","_21_day8","21_day9","21_day10","26_day6","26_day7","26_day8","26_day9","26_day10"))+ylim(0,50)+
+  annotate(geom="text", x=1, y=38, label=sig[1],size=10)+annotate(geom="text", x=2, y=38, label=sig[2],size=10)+annotate(geom="text", x=3, y=38, label=sig[3],size=10)+annotate(geom="text", x=4, y=38, label=sig[4],size=10)+
+  scale_color_manual(values = c("blue","red","green","orange","purple","yellow","pink","black","grey","dark blue"))
+Fecund_figure_exp5_maleandfemale
+dev.off()
+
+
+pdf("fecundity for males and females_exp5.pdf")
+#fecundity graph for males
+
+fit=glm(fecundity_male~Treatment*Day,data=dataset2,family=quasipoisson)
+#summary(fit)
+anova_fec=anova(fit, test="Chisq")
+write.csv(anova_fec,"Exp5_fecundity_model_table.csv")
+
+fit_contrast <- emmeans::emmeans(fit, "Treatment", by="Day", mode="kenward-roger")
+fit_contr <- contrast(fit_contrast, method="trt.vs.ctrl")
+
+pheno_contr <- as.data.frame(summary(fit_contr))
+pheno_contr
+write.csv(pheno_contr,"Exp5_fecundity_male_posthoc_table.csv")
+
+#convert p-values to stars for plot
+sig=ifelse(pheno_contr$p.value<0.001,"***",ifelse(pheno_contr$p.value<0.01,"**",ifelse(pheno_contr$p.value<0.05,"*","")))
+
+Fecund_figure_exp5_male=ggplot(dataset2, aes(x=Day, y=fecundity_male, col=Treatment)) + theme_base()+ylab("# Progeny per mom")+ggtitle("Experiment 5")+theme(axis.text.x = element_text(angle = 45))+
+  geom_boxplot()+scale_x_discrete(name="Days", labels=c("6","7","8","9","10"))+ylim(0,50)+
+  annotate(geom="text", x=1, y=38, label=sig[1],size=10)+annotate(geom="text", x=2, y=38, label=sig[2],size=10)+annotate(geom="text", x=3, y=38, label=sig[3],size=10)+annotate(geom="text", x=4, y=38, label=sig[4],size=10)+
+  scale_color_manual(values = c("blue","red"))
+Fecund_figure_exp5_male
+
+#fecundity graph for females
+
+fit=glm(fecundity_female~Treatment*Day,data=dataset2,family=quasipoisson)
+#summary(fit)
+anova_fec=anova(fit, test="Chisq")
+write.csv(anova_fec,"Exp5_fecundity_model_table.csv")
+
+fit_contrast <- emmeans::emmeans(fit, "Treatment", by="Day", mode="kenward-roger")
+fit_contr <- contrast(fit_contrast, method="trt.vs.ctrl")
+
+pheno_contr <- as.data.frame(summary(fit_contr))
+pheno_contr
+
+write.csv(pheno_contr,"Exp5_fecundity_female_posthoc_table.csv")
+
+#convert p-values to stars for plot
+sig=ifelse(pheno_contr$p.value<0.001,"***",ifelse(pheno_contr$p.value<0.01,"**",ifelse(pheno_contr$p.value<0.05,"*","")))
+
+Fecund_figure_exp5_male=ggplot(dataset2, aes(x=Day, y=fecundity_female, col=Treatment)) + theme_base()+ylab("# Progeny per mom")+ggtitle("Experiment 5")+theme(axis.text.x = element_text(angle = 45))+
+  geom_boxplot()+scale_x_discrete(name="Days", labels=c("6","7","8","9","10"))+ylim(0,50)+
+  annotate(geom="text", x=1, y=38, label=sig[1],size=10)+annotate(geom="text", x=2, y=38, label=sig[2],size=10)+annotate(geom="text", x=3, y=38, label=sig[3],size=10)+annotate(geom="text", x=4, y=38, label=sig[4],size=10)+
+  scale_color_manual(values = c("blue","red"))
+Fecund_figure_exp5_male
 
 dev.off()
 
@@ -1784,7 +2034,7 @@ COI_figure=COI_figure+stat_summary(fun = median, geom="line",aes(group=Treatment
 COI_figure
 
 
-# experiment 5 least biased -----------------------------------------------
+# experiment 3 least biased -----------------------------------------------
 
 yv1=subset(exp5,exp5$gamete_class=="gt2a")
 yv2=subset(exp5,exp5$gamete_class=="gt4a")
@@ -2052,7 +2302,7 @@ dev.off()
 
 
 
-# Reproducibility ---------------------------------------------------------
+# Reproducibility Experiments 2-3 ---------------------------------------------------------
 
 #Fecundity and recombination rate comparison
 #Subset is for the flies who are collected post mating day 9.
@@ -2346,7 +2596,21 @@ pdf("Supplementary_figure_1.pdf")
 ggarrange(Fecund_figure_exp1,Fecund_figure_exp2,Fecund_figure_exp3,Fecund_figure_exp4,Fecund_figure_exp5, Fecund_figure_age,labels = c("A","B","C","D","E","F"), ncol = 2,nrow = 3)
 dev.off()
 
-# Age experiment ----------------------------------------------------------
+pdf("SNP_i3_boxplot.pdf")
+SNP_i3_boxplot=ggplot(aes(y=rec_rate_i3,x=Day, col=Treatment,label=count.sum),data=genotyping)+scale_colour_manual(values=c("blue","red"))+geom_boxplot()+ylab("% recombination")+theme_base()+scale_x_discrete(name="Days post-mating",labels=c("1-2","3-4","5-6","7-8","9-10"))
+SNP_i3_boxplot=SNP_i3_boxplot+ggtitle("interval 3")+ylim(0,0.6)
+SNP_i3_boxplot=SNP_i3_boxplot+annotate(geom="text", x=1, y=0.58, label=i3_sig[1],size=10)+annotate(geom="text", x=2, y=0.58, label=i3_sig[2],size=10)+annotate(geom="text", x=3, y=0.58, label=i3_sig[3],size=10)+annotate(geom="text", x=4, y=0.58, label=i3_sig[4],size=10 +annotate(geom="text",x=5,y=0.58,label=i3_sig[5],size=10))
+SNP_i3_boxplot
+dev.off()
+
+pdf("SNP_i4_boxplot.pdf")
+SNP_i4_boxplot=ggplot(aes(y=rec_rate_i4,x=Day, col=Treatment,label=count.sum),data=genotyping)+scale_colour_manual(values=c("blue","red"))+geom_boxplot()+ylab("% recombination")+theme_base()+scale_x_discrete(name="Days post-mating",labels=c("1-2","3-4","5-6","7-8","9-10"))
+SNP_i4_boxplot=SNP_i4_boxplot+ggtitle("interval 4")+ylim(0,0.6)
+SNP_i4_boxplot=SNP_i4_boxplot+annotate(geom="text", x=1, y=0.58, label=i4_sig[1],size=10)+annotate(geom="text", x=2, y=0.58, label=i4_sig[2],size=10)+annotate(geom="text", x=3, y=0.58, label=i4_sig[3],size=10)+annotate(geom="text", x=4, y=0.58, label=i4_sig[4],size=10+annotate(geom="text",x=5,y=0.58,label=i4_sig[5],size=10))
+SNP_i4_boxplot
+dev.off()
+
+# Experiment 4 (Age Experiment) ----------------------------------------------------------
 
 #This script includes analysis for the manuscript titled:
 #"Maternal age alters recombination rate in Drosophila pseudoobscura"
@@ -2358,7 +2622,7 @@ dev.off()
 #The third section of code shows the steps to convert the raw data file "Mutant_screen_data_raw.csv" 
 #to a cleaned-up version that is used in the following sections called "Mutant_screen_data_cleanedup.csv".
 
-# Section 1: Fecundity Pilot Data Analysis -------------------------------------------
+# Experiment 4 Section 1: Fecundity Pilot Data Analysis -------------------------------------------
 
 fec=read.csv("FecundityPilotExperiment_updated.csv", header=T,na.strings = "na",stringsAsFactors = T)
 
@@ -2387,7 +2651,7 @@ posthoc
 
 tapply(fec$Fecundity,fec$Treatment,mean,na.rm=T)
 
-# Section 2: Survivorship Analysis ---------------------------------------------------
+# Experiment 4_Section 2: Survivorship Analysis ---------------------------------------------------
 
 #read in data
 sv=read.csv("../datasets/survivorship_per_rep_updated.csv",header=T)
@@ -2427,11 +2691,11 @@ text(70,0.8,paste("Selected Treatment Age = 35 days"),col="#a6611a",cex=0.75)
 
 dev.off()
 
-# Section 3: Mutant Screen Data Clean-up ---------------------------------------------
+# Experiment 4_Section 3: Mutant Screen Data Clean-up ---------------------------------------------
 
 #read in raw data, combine with treatment data, and female counts
 yv=read.csv("Mutant_screen_data_raw.csv",header=T)
-
+unique(yv$Initials)
 #read in cross data with treatment information
 bc_worksheet=read.csv("Mutant_screen_treatment_data_raw.csv",header=T,stringsAsFactors = F) 
 yv=na.omit(yv)
@@ -2572,6 +2836,38 @@ dataset2$fecundity=dataset2$total_offspring/dataset2$Num_moms
 #We will write our data into a file so we can read it in for later analysis. 
 write.csv(dataset2,file="Mutant_screen_data_cleanedup.csv")
 
+
+for (n in 1:length(dataset2$F1.Vial)) {
+  dataset2$NCO_skew[n]=min(dataset2$gt1a_111.sum[n],dataset2$gt1b_000.sum[n])/max(dataset2$gt1a_111.sum[n],dataset2$gt1b_000.sum[n])
+}
+summary(dataset2$NCO_skew)
+
+
+for (n in 1:length(dataset2$F1.Vial)) {
+  dataset2$SCO1_skew[n]=min(dataset2$gt2a_011.sum[n],dataset2$gt2b_100.sum[n])/max(dataset2$gt2a_011.sum[n],dataset2$gt2b_100.sum[n])
+}
+
+
+for (n in 1:length(dataset2$F1.Vial)) {
+  dataset2$SCO2_skew[n]=min(dataset2$gt3a_110.sum[n],dataset2$gt3b_001.sum[n])/max(dataset2$gt3a_110.sum[n],dataset2$gt3b_001.sum[n])
+}
+
+for (n in 1:length(dataset2$F1.Vial)) {
+  dataset2$DCO_skew[n]=min(dataset2$gt4a_010.sum[n],dataset2$gt4b_101.sum[n])/max(dataset2$gt4a_010.sum[n],dataset2$gt4b_101.sum[n])
+}
+
+skew=dataset2[, c(3,21,22,23,24)]
+
+skew2=melt(skew, id="Treatment")
+
+
+pdf("skew_expage.pdf")
+skew_figure_age=ggplot(skew2, aes(x = Treatment, y = value, color = variable)) +  # ggplot function
+  geom_boxplot()+theme_base()+ylab("haplotype bias")+xlab("Treatment")
+
+skew_figure_age
+dev.off()
+
 #gamete analysis by treatment
 gt111=tapply(dataset2$gt1a_111.sum,dataset2$Treatment,sum,na.rm=T)
 gt000=tapply(dataset2$gt1b_000.sum,dataset2$Treatment,sum,na.rm=T)
@@ -2672,7 +2968,7 @@ median(dataset2$Num_moms[dataset2$Treatment=="Age"])
 sum(dataset2$male.sum[dataset2$Treatment=="Control"])
 sum(dataset2$male.sum[dataset2$Treatment=="Age"])
 
-# Section 4: Fecundity Analysis of Mutant Screen -------------------------------------
+# Experiment 4_Section 4: Fecundity Analysis of Mutant Screen -------------------------------------
 
 #Read in cleaned up data
 dataset2=read.csv("Mutant_screen_data_cleanedup.csv")
@@ -2716,7 +3012,7 @@ Fecund_figure_age
 dev.off()
 
 
-# Make multi-panel fecundity figure ---------------------------------------
+# Experiment 4_Make multi-panel fecundity figure ---------------------------------------
 
 
 #now print combined figure 2
@@ -2730,7 +3026,7 @@ tapply(dataset2$fecundity,dataset2$Treatment,mean,na.rm=T)
 tapply(dataset2$fecundity,dataset2$Day,mean,na.rm=T)
 
 
-# Section 5: Recombination Analysis for Mutant Screen --------------------------------
+# Experiment 4_Section 5: Recombination Analysis for Mutant Screen --------------------------------
 
 #Read in cleaned up data
 dataset2=read.csv("Mutant_screen_data_cleanedup.csv")
@@ -2793,7 +3089,7 @@ Recomb_figure_yse
 
 
 
-# Section 6: Recombination Rate Model & Odds Ratio Analysis ---------------------------------
+# Experiment 4_Section 6: Recombination Rate Model & Odds Ratio Analysis ---------------------------------
 
 #Recombination Rate Models per regions
 #NOTE: YOU MUST RUN SECTION 5 CODE before this code section for it to work!
@@ -2911,7 +3207,7 @@ se=tapply(tp1$rec_rate_yse,tp1$Treatment,mean,na.rm=T)
 
 
 
-# Section 7: Crossover interference analysis -----------------------------------------
+# Experiment 4_Section 7: Crossover interference analysis -----------------------------------------
 
 #Read in cleaned up data
 dataset2=read.csv("Mutant_screen_data_cleanedup.csv")
@@ -2963,7 +3259,7 @@ COI_figure
 
 
 
-# Make multi-panel Recombination Rate and COI Figure -------------------------------------------------
+# Experiment 4_Make multi-panel Recombination Rate and COI Figure -------------------------------------------------
 
 
 #Combine Recombination Figure and COI Figure into multipanel figure:
